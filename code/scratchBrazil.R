@@ -17,11 +17,14 @@ pilotmunicip <- c("Passos", "Sao Sebastiao Do Paraiso", "Piumhi", "Carmo Do Rio 
 
 pilot27munishp <- fullpilotshp[fullpilotshp$muni %in% pilotmunicip,]
 
+## simulate data
 N <- 1000
 
 simdataraw <- data.frame(muni = sample(pilotmunicip, N, replace = TRUE),
                       agebracket = sample(1:7, N, replace = TRUE),
                       mobibracket = sample(1:4, N, replace = TRUE))
+
+## TODO add risk average as a first crude model
 
 simdata <- aggregate(.~muni, data = simdataraw, FUN = mean)
 
@@ -37,12 +40,15 @@ shpFortAgebracket <- merge(shpFort, data_shp@data[,c("muni", "agebracket")], by.
 ## ecdf empirical cummulative distribution to get cuts.
 shpFortAgebracket$agebracketPercentile <- ecdf(shpFortAgebracket$agebracket)(shpFortAgebracket$agebracket)
 
-## adhoc Bogota
-## shpFortAgebracket[shpFortAgebracket$id == "11001", "Agebracket"] <- 20671
+centers <- SpatialPointsDataFrame(gCentroid(data_shp, byid=TRUE),
+                                  data_shp@data, match.ID=FALSE)
+
+centersFort <- as.data.frame(centers)
 
 plotShpHeatMap  <- function(shp){
 ggplot() +
     geom_polygon(data = shp, aes(fill = agebracket, x = long, y = lat, group = group)) +
+    geom_text(data = centersFort, aes(label = muni, x=x, y=y)) +
     scale_fill_gradient(aesthetics = "fill", name = expression(Estimated~Risk~Level),
                         high = "darkblue", low = "#C0C0C0",
                         na.value = "lightgrey",
@@ -55,7 +61,7 @@ ggplot() +
                             title.hjust = 0.5,
                             label.hjust = 0.5)) +
     coord_equal() +
-    enveritas_theme_map()+
+    ## enveritas_theme_map()+
     labs(x = NULL,
          y = NULL,
          title = "Sul de Minas Risk Index",
